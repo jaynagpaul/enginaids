@@ -31,6 +31,7 @@ float calculate_average(rs2::depth_frame& depth, Point bottom_left,
 }
 
 int main(int argc, char* argv[]) try {
+    std::cout << "\007";
     rs2::pipeline p;
     rs2::config cfg;
     cfg.enable_device_from_file(
