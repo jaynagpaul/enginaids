@@ -1,3 +1,4 @@
 *.out
 *.bag
 .vscode
+.DS_STORE

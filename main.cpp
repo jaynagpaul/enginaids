@@ -1,5 +1,8 @@
+#include <time.h>
+
 #include <iostream>
 #include <librealsense2/rs.hpp>  // Include RealSense Cross Platform API
+#include <string>
 #include <tuple>
 #include <vector>
 
@@ -17,6 +20,12 @@ float vector_average(std::vector<float>& v) {
         sum += f;
     }
     return sum / v.size();
+}
+
+void beep() {
+    std::string str = "speaker-test -f440 -t sine";
+    const char* command = str.c_str();
+    system(command);
 }
 
 // Calculate the average depth (meters) between bottom_left and top_right
@@ -51,6 +60,7 @@ int main(int argc, char* argv[]) try {
 
     std::vector<float> v;
     while (true) {
+        time_t last_alerted;
         // stream frames from the pipeline
         rs2::frameset frames = p.wait_for_frames();
         rs2::depth_frame depth = frames.get_depth_frame();
@@ -72,9 +82,11 @@ int main(int argc, char* argv[]) try {
 
         auto rolling_average = vector_average(v);
         if (avg >= 1.07 * rolling_average) {
-            std::cout << "CURB!!!!!!!" << std::endl;
-            // std::cout << "\a";
-            std::cout << frames.get_frame_number();
+            if (difftime(time(NULL), last_alerted) > 5) {
+                std::cout << "Obstacle Detected!" << std::endl;
+                beep();
+                last_alerted = time(NULL);
+            }
         }
 
         // std::cout << "Average: Depth: " << avg << " meters" << std::endl;
