@@ -23,7 +23,7 @@ float vector_average(std::vector<float>& v) {
 }
 
 void beep() {
-    std::string str = "speaker-test -f440 -t sine";
+    std::string str = "aplay -c 2 sheesh.wav";
     const char* command = str.c_str();
     system(command);
 }
