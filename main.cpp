@@ -1,11 +1,23 @@
 #include <iostream>
 #include <librealsense2/rs.hpp>  // Include RealSense Cross Platform API
 #include <tuple>
+#include <vector>
 
 // pixel dimensions of box for fragmentation algorithm
 const int BOX_HEIGHT = 70;
 const int BOX_WIDTH = 100;
+
+const int AVERAGE_FRAME_LENGTH = 15;
+
 using Point = std::tuple<int, int>;
+
+float vector_average(std::vector<float>& v) {
+    float sum = 0;
+    for (float f : v) {
+        sum += f;
+    }
+    return sum / v.size();
+}
 
 // Calculate the average depth (meters) between bottom_left and top_right
 // inclusive.
@@ -31,13 +43,13 @@ float calculate_average(rs2::depth_frame& depth, Point bottom_left,
 }
 
 int main(int argc, char* argv[]) try {
-    std::cout << "\007";
     rs2::pipeline p;
     rs2::config cfg;
-    cfg.enable_device_from_file(
-        "bag_files/better_curb.bag");  // comment out to run on live data
-    p.start(cfg);
+    // cfg.enable_device_from_file(
+    //     "bag_files/better_curb.bag");  // comment out to run on live data
+    p.start();
 
+    std::vector<float> v;
     while (true) {
         // stream frames from the pipeline
         rs2::frameset frames = p.wait_for_frames();
@@ -53,8 +65,19 @@ int main(int argc, char* argv[]) try {
                            height / 2 + BOX_HEIGHT / 2};
 
         auto avg = calculate_average(depth, bottom_left, top_right);
+        if (v.size() >= AVERAGE_FRAME_LENGTH) {
+            v.erase(v.begin());
+        }
+        v.push_back(avg);
 
-        std::cout << "Average: Depth: " << avg << " meters" << std::endl;
+        auto rolling_average = vector_average(v);
+        if (avg >= 1.07 * rolling_average) {
+            std::cout << "CURB!!!!!!!" << std::endl;
+            // std::cout << "\a";
+            std::cout << frames.get_frame_number();
+        }
+
+        // std::cout << "Average: Depth: " << avg << " meters" << std::endl;
     }
 
     return EXIT_SUCCESS;
